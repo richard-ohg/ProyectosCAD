@@ -1,3 +1,17 @@
+//http://sintesis.ugto.mx/WintemplaWeb/02Wintempla/10Images/07PPM%20Image/index.htm
+/*
+Cabecera del archivo
+P1 -> archivos de ASCII BitMap (PBM) *.pbm
+P2 -> archivos de ASCII GrayMap (PGM) *.pgm
+P3 -> archivos de ASCII PixMap (PPM) *.ppm
+
+//Estructura
+cabecera con el formato
+#NumColumnas #NumFila
+#numeroMaximo
+
+*/
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
