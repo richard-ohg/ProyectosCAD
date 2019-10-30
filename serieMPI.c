@@ -3,6 +3,8 @@
 
 int** asigna(int columnas, int filas);
 void libera(int **matriz, int columnas);
+int** blanco_negro(int **mR, int **mG, int **mB, int columnas, int filas );
+int** invertir_color(int **matriz, int columnas, int filas, int maximo);
 
 int main(int argc, char const *argv[]){
 
@@ -67,6 +69,28 @@ int** asigna(int columnas, int filas){
 		x[i] = (int*)malloc(filas*sizeof(int));
 
   return x;
+}
+
+int** blanco_negro(int **mR, int **mG, int **mB, int columnas, int filas ){
+  int **bn = asigna(columnas,filas);
+  int i,j;
+
+  for(i = 0; i< columnas; i++)
+    for(j = 0; j < filas; j++)
+      bn[i][j] = (mR[i][j] + mG[i][j] + mB[i][j]) / 3;
+
+  return bn;
+}
+
+int** invertir_color(int **matriz, int columnas, int filas, int maximo){
+  int **alt = asigna(columnas,filas);
+  int i,j;
+
+  for(i = 0; i< columnas; i++)
+    for(j = 0; j < filas; j++)
+      alt[i][j] = maximo - matriz[i][j];
+
+  return alt;
 }
 
 void libera(int **matriz, int columnas){
