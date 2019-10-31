@@ -5,8 +5,8 @@ int** asigna();
 void libera(int **matriz);
 int** blanco_negro(int **mR, int **mG, int **mB);
 int** invertir_color(int **matriz);
-void escribeBN(int** matriz);
-void escribeCI(int** mr, int** mg, int** mb);
+void escribeBN(char* nombre, int** matriz);
+void escribeCI(char* nombre, int** mr, int** mg, int** mb);
 
 char buffer[100];
 char heder[3];
@@ -14,14 +14,15 @@ int columnas, filas,maximo;
 
 int main(int argc, char const *argv[]){
 
-    FILE *file,*copy;
+    if(argc < 2){
+      printf("Modo de uso:  ejecutable imagen.pnm\n");
+      return 1;
+    }
 
+    FILE *file;
     int r,g,b,i,j;
     int **mR, **mG,**mB, **bn, **mIR, **mIG,** mIB;
-    file = fopen("lena_color.pnm", "r");
-    copy = fopen("lena_copy.pnm","w");
-
-
+    file = fopen(argv[1], "r");
 
     if(file == NULL){
         printf("El archivo no existe");
@@ -36,21 +37,15 @@ int main(int argc, char const *argv[]){
     mG = asigna();
     mB = asigna();
 
-    printf("Heder: %s\nCommentario: %sTamaño: %d X %d\nMaximo: %d\n",heder,buffer,columnas,filas,maximo);
+    //printf("Heder: %s\nCommentario: %sTamaño: %d X %d\nMaximo: %d\n",heder,buffer,columnas,filas,maximo);
 
     int auxC = 0, auxF =0;
     while(fscanf(file,"%d\n%d\n%d\n",&r,&g,&b) != EOF){
-    //for(i =0 ; i< columnas*filas;i++){
-      //fscanf(file,"%d\n%d\n%d\n",&r,&g,&b);
       mR[auxC][auxF] = r;
       mG[auxC][auxF] = g;
       mB[auxC][auxF] = b;
 
-      //printf("%d   %d   %d    %d   %d   %d\n",r,g,b,mR[auxC][auxF],mG[auxC][auxF],mB[auxC][auxF]);
-      //printf("%d   %d\n",auxC, auxF);
-      //auxC++;
       auxF++;
-
       if(auxF == filas){
         auxF = 0;
         auxC++;
@@ -62,8 +57,8 @@ int main(int argc, char const *argv[]){
     mIG = invertir_color(mG);
     mIB = invertir_color(mB);
 
-    escribeBN(bn);
-    escribeCI(mIR,mIG,mIB);
+    escribeBN("lena_bn.pnm",bn);
+    escribeCI("lena_inv.pnm",mIR,mIG,mIB);
 
     libera(mR);
     libera(mG);
@@ -76,9 +71,9 @@ int main(int argc, char const *argv[]){
     return 0;
 }
 
-void escribeCI(int** mr, int** mg, int** mb){
+void escribeCI(char* nombre,int** mr, int** mg, int** mb){
   FILE *file;
-  file = fopen("lena_inv.pnm","w");
+  file = fopen(nombre,"w");
   if(file == NULL){
       printf("El archivo no existe");
       return;
@@ -94,9 +89,9 @@ void escribeCI(int** mr, int** mg, int** mb){
       fprintf(file, "%d\n%d\n%d\n",mr[i][j],mg[i][j],mb[i][j]);
 }
 
-void escribeBN(int** matriz){
+void escribeBN(char* nombre,int** matriz){
   FILE *file;
-  file = fopen("lena_bn.pnm","w");
+  file = fopen(nombre,"w");
   if(file == NULL){
       printf("El archivo no existe");
       return;
