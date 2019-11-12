@@ -1,153 +1,139 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-int** asigna();
-void libera(int **matriz);
-int** blanco_negro(int **mR, int **mG, int **mB);
-int** invertir_color(int **matriz);
-void escribeBN(char* nombre, int** matriz);
-void escribeCI(char* nombre, int** mr, int** mg, int** mb);
+int** allocate_memory();
+void free_mem (int **matriz);
+int** gray_scale_matrix (int **red_matrix, int **green_matrix, int **blue_matrix);
+int** negative (int **matriz);
+void generate_grayscale_file (char* filename, int** matriz);
+void generate_negative_file (char* filename, int** red, int** green, int** blue);
 
 char buffer[100];
-char heder[3];
-int columnas, filas,maximo;
+char header[3];
+int columns, rows, max_color_value;
+const char* GRAY_SCALE_HEADER = "P2";
+const char* NEGATIVE_HEADER = "P3";
 
 int main(int argc, char const *argv[]){
-
     if(argc < 2){
-      printf("Modo de uso:  ejecutable imagen.pnm\n");
+      printf("Modo de uso:  ejecutable <imagen.pnm>\n");
       return 1;
     }
-
     FILE *file;
     int r,g,b,i,j;
-    int **mR, **mG,**mB, **bn, **mIR, **mIG,** mIB;
+    int **red_matrix, **green_matrix, **blue_matrix;
     file = fopen(argv[1], "r");
-
     if(file == NULL){
         printf("El archivo no existe");
         exit(1);
     }
-    fscanf(file,"%s\n",heder);
+    fscanf(file,"%s\n",header);
     fgets(buffer, 100, file);
-    fscanf(file,"%d %d\n",&columnas, &filas);
-    fscanf(file,"%d\n",&maximo);
+    // Getting file resolution and max len
+    fscanf(file,"%d %d\n",&columns, &rows);
+    fscanf(file,"%d\n",&max_color_value);
 
-    mR = asigna();
-    mG = asigna();
-    mB = asigna();
+    red_matrix = allocate_memory();
+    green_matrix = allocate_memory();
+    blue_matrix = allocate_memory();
 
-    //printf("Heder: %s\nCommentario: %sTamaño: %d X %d\nMaximo: %d\n",heder,buffer,columnas,filas,maximo);
+    //printf("header: %s\nCommentario: %sTamaño: %d X %d\nMaximo: %d\n",header,buffer,columns,rows,max_color_value);
 
     int auxC = 0, auxF =0;
     while(fscanf(file,"%d\n%d\n%d\n",&r,&g,&b) != EOF){
-      mR[auxC][auxF] = r;
-      mG[auxC][auxF] = g;
-      mB[auxC][auxF] = b;
+      red_matrix[auxC][auxF] = r;
+      green_matrix[auxC][auxF] = g;
+      blue_matrix[auxC][auxF] = b;
 
       auxF++;
-      if(auxF == filas){
+      if(auxF == rows){
         auxF = 0;
         auxC++;
       }
     }
 
-    bn = blanco_negro(mR,mG,mB);
-    mIR = invertir_color(mR);
-    mIG = invertir_color(mG);
-    mIB = invertir_color(mB);
+    generate_grayscale_file("lena_bn.pnm", gray_scale_matrix(red_matrix,green_matrix,blue_matrix));
+    generate_negative_file("lena_neg.pnm", negative(red_matrix), negative(green_matrix), negative(blue_matrix));
 
-    escribeBN("lena_bn.pnm",bn);
-    escribeCI("lena_inv.pnm",mIR,mIG,mIB);
-
-    libera(mR);
-    libera(mG);
-    libera(mB);
-    libera(bn);
-    libera(mIR);
-    libera(mIG);
-    libera(mIB);
+    free_mem(red_matrix);
+    free_mem(green_matrix);
+    free_mem(blue_matrix);
 
     return 0;
 }
 
-void escribeCI(char* nombre,int** mr, int** mg, int** mb){
+void generate_negative_file(char* nombre,int** mr, int** mg, int** mb){
   FILE *file;
   file = fopen(nombre,"w");
   if(file == NULL){
       printf("El archivo no existe");
       return;
   }
-
-  fputs("P3\n",file);
+  fputs(NEGATIVE_HEADER,file);
+  fputs("\n",file);
   fputs(buffer,file);
-  fprintf(file,"%d %d\n",columnas,filas);
-  fprintf(file, "%d\n",maximo);
+  fprintf(file,"%d %d\n",columns,rows);
+  fprintf(file, "%d\n",max_color_value);
   int i, j;
-  for(i=0; i<columnas;i++)
-    for(j=0; j<filas; j++)
+  for(i=0; i<columns;i++)
+    for(j=0; j<rows; j++)
       fprintf(file, "%d\n%d\n%d\n",mr[i][j],mg[i][j],mb[i][j]);
 }
 
-void escribeBN(char* nombre,int** matriz){
+void generate_grayscale_file(char* nombre,int** matriz){
   FILE *file;
   file = fopen(nombre,"w");
   if(file == NULL){
-      printf("El archivo no existe");
-      return;
+    printf("El archivo no existe");
+    return;
   }
-
-  fputs("P2\n",file);
+  fputs(GRAY_SCALE_HEADER,file);
+  fputs("\n",file);
   fputs(buffer,file);
-  fprintf(file,"%d %d\n",columnas,filas);
-  fprintf(file, "%d\n",maximo);
+  fprintf(file,"%d %d\n",columns,rows);
+  fprintf(file, "%d\n",max_color_value);
   int i, j;
-  for(i=0; i<columnas;i++)
-    for(j=0; j<filas; j++)
+  for(i=0; i<columns;i++) {
+    for(j=0; j<rows; j++) {
       fprintf(file, "%d\n",matriz[i][j]);
+    }
+  }
 }
 
-int** asigna(){
+int** allocate_memory(){
   int **x;
   int i;
-  x = (int **)malloc(columnas*sizeof(int*));
-
-	for (i=0;i<columnas;i++)
-		x[i] = (int*)malloc(filas*sizeof(int));
-
+  x = (int **)malloc(columns*sizeof(int*));
+	for (i=0;i<columns;i++) {
+		x[i] = (int*)malloc(rows*sizeof(int));
+  }
   return x;
 }
 
-int** blanco_negro(int **mR, int **mG, int **mB){
-  int **bn = asigna();
+int** gray_scale_matrix(int **red_matrix, int **green_matrix, int **blue_matrix){
+  int **bn = allocate_memory();
   int i,j;
-
-  for(i = 0; i< columnas; i++)
-    for(j = 0; j < filas; j++){
-      //printf("%d  %d   %d\n",mR[i][j],mG[i][j],mB[i][j]);
-      bn[i][j] = (mR[i][j] + mG[i][j] + mB[i][j]) / 3;
+  for(i = 0; i< columns; i++) {
+    for(j = 0; j < rows; j++){
+      bn[i][j] = (red_matrix[i][j] + green_matrix[i][j] + blue_matrix[i][j]) / 3;
     }
-      //printf("%d\n",(mR[i][j] + mG[i][j] + mB[i][j]) / 3 );
-
-
+  }
   return bn;
 }
 
-int** invertir_color(int **matriz){
-  int **alt = asigna();
+int** negative(int **matriz) {
+  int **negative_matrix = allocate_memory();
   int i,j;
-
-  for(i = 0; i< columnas; i++)
-    for(j = 0; j < filas; j++)
-      alt[i][j] = maximo - matriz[i][j];
-
-  return alt;
+  for(i = 0; i< columns; i++)
+    for(j = 0; j < rows; j++)
+      negative_matrix[i][j] = max_color_value - matriz[i][j];
+  return negative_matrix;
 }
 
-void libera(int **matriz){
+void free_mem(int **matriz) {
   int i;
-  for(i=0; i<columnas;i++)
+  for(i=0; i<columns;i++) {
     free(matriz[i]);
-
+  }
   free(matriz);
 }
