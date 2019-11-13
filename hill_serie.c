@@ -4,15 +4,17 @@
 
 int** reserveMemoryMatrix(int dimension);
 void fillMatrix(int** matrix, int dimension);
-void printMatrix(int** matrix, int dimension);
+void printMatrix(int** matrix,  int rows, int columns);
 char* getAlphabet();
 char* readFile(char *filename);
 char** separateStringToVectors(char* string, int dimension);
 void removeSpaces(char* string);
+char* completeText(char* string, int numberMissingCharacters);
+
 
 int main(int argc, char const *argv[]){
-    int dimension, **matrix, *vector, lenghtAlphabet;
-    char *stringToEncrypt, *alphabet;
+    int dimension, **NonSingularMatrix, *vector, lenghtAlphabet;
+    char *stringToEncrypt, *alphabet, **matrixOfVectors;
 
     // Get Alphabet for encrypt
     alphabet = getAlphabet();
@@ -21,9 +23,9 @@ int main(int argc, char const *argv[]){
     printf("Ingresa la dimension de la matriz: ");
     scanf("%d", &dimension);
 
-    matrix = reserveMemoryMatrix(dimension);
-    fillMatrix(matrix, dimension);
-    // printMatrix(matrix, dimension);
+    NonSingularMatrix = reserveMemoryMatrix(dimension);
+    // fillMatrix(NonSingularMatrix, dimension);
+    // printMatrix(NonSingularMatrix, dimension, dimension);
     
     // Reading from file, return string
     stringToEncrypt = readFile("test.txt");
@@ -33,16 +35,8 @@ int main(int argc, char const *argv[]){
     removeSpaces(stringToEncrypt);
     // puts(stringToEncrypt); // test
 
-    separateStringToVectors(stringToEncrypt, dimension);
-
-
-    // for (int i = 0; i < lenghtAlphabet; i++){
-    //     if (alphabet[i] == ' '){
-    //         printf("Es espacio en el indice: %d", i);
-    //     }
-    // }
-
-
+    // up to this point, ready string separate in vectors
+    matrixOfVectors = separateStringToVectors(stringToEncrypt, dimension);
 
     return 0;
 }
@@ -65,9 +59,9 @@ void fillMatrix(int** matrix, int dimension){
     }
 }
 
-void printMatrix(int** matrix, int dimension){
-    for (int i = 0; i < dimension; i++){
-        for (int j = 0; j < dimension; j++){
+void printMatrix(int** matrix, int rows, int columns){
+    for (int i = 0; i < rows; i++){
+        for (int j = 0; j < columns; j++){
             printf("%d ",matrix[i][j]);   
         }
         printf("\n");
@@ -126,16 +120,59 @@ void removeSpaces(char* string) {
 
 char** separateStringToVectors(char* string, int dimension){
     int module = strlen(string) % dimension;
-    int numberOfVectors = strlen(string)/dimension;
+    char* stringToSeparate;
     char** matrixOfVectors;
 
-    // matrixOfVectors = (char**) calloc(numberOfVectors,sizeof(char*));
-    // for
-    printf("Module: %d\n",module);
-    printf("Length of string: %d\n",strlen(string));
-    if(offset != 0){
-        printf("necesita acompletarse");
+    if(module != 0){
+        printf("necesita completarse\n");
+        int numberMissingCharacters = dimension - module;
+        stringToSeparate = completeText(string, numberMissingCharacters);
+        // puts(stringToSeparate); // test
+        // printf("length after complete text: %d\n", strlen(stringToSeparate)); // test
     }else{
-        printf("Esta completo");
+        stringToSeparate = string;
     }
+    int numberOfVectors = strlen(stringToSeparate)/dimension;
+    // puts(stringToSeparate); // test
+    
+    matrixOfVectors = (char**) calloc(numberOfVectors, sizeof(char*));
+
+    for (int i = 0; i < numberOfVectors; i++){
+        matrixOfVectors[i] = (char*) calloc(dimension, sizeof(char));
+    }
+    
+
+    for (int i = 0; i < numberOfVectors; i++){
+        for (int j = 0; j < dimension; j++){
+            matrixOfVectors[i][j] = stringToSeparate[(i*dimension)+j]; 
+        }     
+    }
+
+// Test - Printing matrix
+    // for (int i = 0; i < numberOfVectors; i++){
+    //     for (int j = 0; j < dimension; j++){
+    //         printf("%c ", matrixOfVectors[i][j]); 
+    //     }
+    //     printf("\n");
+    // }
+
+    return matrixOfVectors;
+
+}
+
+char* completeText(char* string, int numberMissingCharacters){
+    char *new_string = (char*) calloc (strlen(string)+numberMissingCharacters, sizeof(char));
+
+    // char complements[numberMissingCharacters]; // It doesn't work
+    char *complements = (char*) calloc (numberMissingCharacters, sizeof(char));
+
+    for (int i = 0; i < numberMissingCharacters; i++){
+        complements[i] = 'X';
+    }
+    // puts(complements); // test
+
+    strcpy(new_string, string);
+    strcat(new_string, complements);
+
+    return new_string;
 }
