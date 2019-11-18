@@ -9,20 +9,28 @@ void printMatrix(int** matrix,  int rows, int columns);
 char* getAlphabet();
 // Functions for read file and get a string clean for encrypt
 char* readFile(char *filename);
-void removeSpaces(char* string);
-void replaceUnknownCharacters(char* string, char* alphabet);
+void replaceAndremoveSpaces(char* string,char* alphabet);
+int checkIfExist(char character, char* alphabet);
 // Function for fill string only if it's necessary
 char* completeText(char* string, int numberMissingCharacters);
 // Functions for convert string to vectors of numbers
 int** separateStringToVectors(char* stringToSeparate, int numberOfVectors, int dimension, char* alphabet);
 int* convertVectorToNumbers(char* vector, char* alphabet);
-// 
+
 int* multiplyVector(int** matrix, int *vector, int dimension, int module);
 
+char* convertNumbersToStrign(int *vector, char* alphabet, int dimension);
+char* encryptVector(int** matrix, char * alphabet, int dimension, int numberOfVectors);
+void printFile(char* fileName, char* string);
 
-int main(int argc, char const *argv[]){
+int main(int argc, char *argv[]){
     int dimension, **nonSingularMatrix, *vector, lenghtAlphabet, **matrixOfVectors, module;
     char *stringToEncrypt, *alphabet, *textEncrypt;
+
+    if(argc != 2){
+        printf("numero de parametros incorrecto:  program <file>\n");
+        return 0;
+    }
 
     // Get Alphabet for encrypt
     alphabet = getAlphabet();
@@ -34,14 +42,14 @@ int main(int argc, char const *argv[]){
     nonSingularMatrix = reserveMemoryMatrix(dimension, dimension);
     fillMatrix(nonSingularMatrix, dimension);
     // printMatrix(NonSingularMatrix, dimension, dimension);
-    
+
     // Reading from file, return string
-    stringToEncrypt = readFile("test.txt");
+    stringToEncrypt = readFile(argv[1]);
     // puts(stringToEncrypt); // test
 
     // Removing blank spaces for string to encrypt, pass by value is used
-    removeSpaces(stringToEncrypt);
-    // puts(stringToEncrypt); // test
+    replaceAndremoveSpaces(stringToEncrypt,alphabet);
+    //puts(stringToEncrypt); // test
 
     // check if string is complete, otherwise it is filled
     module = strlen(stringToEncrypt) % dimension;
@@ -58,49 +66,29 @@ int main(int argc, char const *argv[]){
     int numberOfVectors = strlen(stringToEncrypt)/dimension;
     matrixOfVectors = separateStringToVectors(stringToEncrypt, numberOfVectors, dimension, alphabet);
 
-    printf("Before multiply\n"); // test
-    printMatrix(matrixOfVectors, numberOfVectors, dimension); // test
+    //printf("Before multiply\n"); // test
+    //printMatrix(matrixOfVectors, numberOfVectors, dimension); // test
 
     for (int i = 0; i < numberOfVectors; i++){
         matrixOfVectors[i] = multiplyVector(nonSingularMatrix, matrixOfVectors[i], dimension, strlen(alphabet));
     }
-    printf("After multiply\n"); // test
-    printMatrix(matrixOfVectors, numberOfVectors, dimension); // test
+    //printf("After multiply\n"); // test
+    //printMatrix(matrixOfVectors, numberOfVectors, dimension); // test
+
+    textEncrypt = encryptVector(matrixOfVectors, alphabet, dimension, numberOfVectors);
+
+    //puts(textEncrypt);
+    printFile("salida.txt",textEncrypt);
+
 
 
     return 0;
 }
 
-int** reserveMemoryMatrix(int rows, int columns){
-    int **matrix = (int **) calloc(rows, sizeof(int*));
-
-    for (int i = 0; i < rows; i++)
-        matrix[i] = (int*) calloc(columns, sizeof(int));
-    
-    return matrix;
-}
-
-void fillMatrix(int** matrix, int dimension){
-    for (int i = 0; i < dimension; i++){
-        for (int j = 0; j < dimension; j++){
-            printf("Ingresa el elemento [%d][%d] de la matriz: ",i,j);
-            scanf("%d",&matrix[i][j]);    
-        }
-    }
-}
-
-void printMatrix(int** matrix, int rows, int columns){
-    for (int i = 0; i < rows; i++){
-        for (int j = 0; j < columns; j++){
-            printf("%d ",matrix[i][j]);   
-        }
-        printf("\n");
-    }
-}
 
 char* getAlphabet(){
     // return "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz .,;-!?_";
-    return "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    return "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
 }
 
 char* readFile(char *fileName){
@@ -140,32 +128,55 @@ char* readFile(char *fileName){
     return buffer;
 }
 
-void removeSpaces(char* string) {
-    const char* d = string;
-    do {
-        while (*d == ' ') {
-            ++d;
-        }
-    } while (*string++ = *d++);
-}
-/* Missing implements
-void replaceUnknownCharacters(char* string, char* alphabet){
-    for (int i = 0; i < strlen(string); i++){
-        if (!checkIfExist(string[i], alphabet)){
-            string[i]
-        }
-             
-    }  
+void printFile(char* fileName, char* string){
+    FILE * file = fopen(fileName, "w");
+    if(file){
+        fputs(string,file);
+        fclose(file);
+    }
 }
 
-bool checkIfExist(char character, char* alphabet){
+void replaceAndremoveSpaces(char* str, char* alphabet) {
+    size_t str_len = strlen(str);
+    char result[str_len];
+    size_t p = 0;
+    size_t i = 0;
+    for (i = 0; i < str_len; ++i) {
+        if (str[i] != ' ') {
+            if(str[i] == 10 || str[i] == 11 || str[i] == 13 || checkIfExist(str[i], alphabet)){
+                result[p] = str[i];
+            }else{
+                switch((unsigned int)str[i]){
+                    case 165: //Ñ
+                      result[p] = 'N';
+                      break;
+                    case 164: //ñ
+                      result[p] = 'n';
+                      break;
+                    default:
+                      result[p] = 'X';
+                }
+            }
+            p++;
+        }
+    }
+    //puts(result);  //test
+    if (p < str_len){
+        str[p] = '\0';
+    }
+    for (i = 0; i < p; ++i) {
+        str[i] = result[i];
+    }
+}
+
+int checkIfExist(char character, char* alphabet){
     for (int j = 0; j < strlen(alphabet); j++){
         if (character == alphabet[j]){
-            return true;
-        }   
+            return 1;
+        }
     }
-    return false;
-} */
+    return 0;
+}
 
 char* completeText(char* string, int numberMissingCharacters){
     char *new_string = (char*) calloc (strlen(string)+numberMissingCharacters, sizeof(char));
@@ -186,21 +197,21 @@ char* completeText(char* string, int numberMissingCharacters){
 int** separateStringToVectors(char* stringToSeparate, int numberOfVectors, int dimension, char* alphabet){
     char **arrayOfStrings;
     int **matrixOfNumbers;
-    
+
     // Reserve memory for array containing string vectors
     arrayOfStrings = (char**) calloc(numberOfVectors, sizeof(char*));
-    
+
     for (int i = 0; i < numberOfVectors; i++)
         arrayOfStrings[i] = (char*) calloc(dimension, sizeof(char));
-    
+
     // Resever memory for matrix containing numbers vectors
     matrixOfNumbers = reserveMemoryMatrix(numberOfVectors, dimension);
 
     // Separate string each 'dimension' elements
     for (int i = 0; i < numberOfVectors; i++){
         for (int j = 0; j < dimension; j++){
-            arrayOfStrings[i][j] = stringToSeparate[(i*dimension)+j]; 
-        }     
+            arrayOfStrings[i][j] = stringToSeparate[(i*dimension)+j];
+        }
     }
 
     // Convert each string to numbers according to the alphabet
@@ -209,7 +220,7 @@ int** separateStringToVectors(char* stringToSeparate, int numberOfVectors, int d
 
     // printf("Test of matrix\n"); // test
     // printMatrix(matrixOfNumbers, numberOfVectors, dimension); // test
-    
+
     return matrixOfNumbers;
 
 }
@@ -222,12 +233,31 @@ int* convertVectorToNumbers(char* vector, char* alphabet){
             if (vector[i] == alphabet[j]){
                 // printf("El indice del caracter %c dentro del alfabeto es: %d\n", vector[i], j); // test
                 vectorOFNumbers[i] = j;
-            }  
-        }  
+            }
+        }
     }
-    // printf("\n"); // test 
+    // printf("\n"); // test
 
-    return vectorOFNumbers;  
+    return vectorOFNumbers;
+}
+
+char* encryptVector(int** matrix, char * alphabet, int dimension, int numberOfVectors){
+    char* ev = (char*) calloc(dimension*numberOfVectors,sizeof(char));
+    for(int i=0; i<numberOfVectors; i++){
+        ev = strcat(ev, convertNumbersToStrign(matrix[i],alphabet,dimension));
+    }
+    return ev;
+}
+
+char* convertNumbersToStrign(int *vector, char* alphabet, int dimension){
+    char* str = (char*) calloc(dimension,sizeof(char));
+    int pos;
+    for(int i = 0 ; i<dimension ; i++){
+        //printf("Numero:  %d, Caracter %c\n",vector[i],alphabet[vector[i]] );
+        str[i] = alphabet[vector[i]];
+    }
+    //puts(str);  //test
+    return str;
 }
 
 int* multiplyVector(int** matrix, int *vector, int dimension, int module){
@@ -240,9 +270,36 @@ int* multiplyVector(int** matrix, int *vector, int dimension, int module){
         for(j=0; j < dimension; j++) {
             *(resultVector + i) += (matrix[i][j] * (*(vector + j)));
         }
-        // Apply module 
-        *(resultVector+i) = *(resultVector+i) % module; 
+        // Apply module
+        *(resultVector+i) = *(resultVector+i) % module;
     }
-    
+
     return resultVector;
+}
+
+int** reserveMemoryMatrix(int rows, int columns){
+    int **matrix = (int **) calloc(rows, sizeof(int*));
+
+    for (int i = 0; i < rows; i++)
+        matrix[i] = (int*) calloc(columns, sizeof(int));
+
+    return matrix;
+}
+
+void fillMatrix(int** matrix, int dimension){
+    for (int i = 0; i < dimension; i++){
+        for (int j = 0; j < dimension; j++){
+            printf("Ingresa el elemento [%d][%d] de la matriz: ",i,j);
+            scanf("%d",&matrix[i][j]);
+        }
+    }
+}
+
+void printMatrix(int** matrix, int rows, int columns){
+    for (int i = 0; i < rows; i++){
+        for (int j = 0; j < columns; j++){
+            printf("%d ",matrix[i][j]);
+        }
+        printf("\n");
+    }
 }
