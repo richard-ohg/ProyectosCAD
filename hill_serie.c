@@ -88,7 +88,8 @@ int main(int argc, char *argv[]){
 
 char* getAlphabet(){
     // return "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz .,;-!?_";
-    return "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+    // return "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+    return "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 }
 
 char* readFile(char *fileName){
