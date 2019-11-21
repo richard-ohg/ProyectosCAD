@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
 #include <mpi.h>
+#include <time.h>
 
 int** allocate_memory();
 int* allocate_lineal_memory(int length);
@@ -21,11 +21,13 @@ int MAX_COLOR_VALUE, ROWS, COLUMNS;
 const char* GRAYSCALE_SIGNATURE = "P2";
 const char* NEGATIVE_SIGNATURE = "P3";
 static int PIXELS = 0;
-int rank, world_size;
+int rank, world_size, set_counter;
+double start, end;
 
 int main(int argc, char *argv[]){
   
   validate_args(argc);
+
   FILE *original_file;
   int *rgb_matrix;
   int colorvalue;
@@ -34,6 +36,9 @@ int main(int argc, char *argv[]){
   MPI_Init(&argc, &argv);
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   MPI_Comm_size(MPI_COMM_WORLD, &world_size);
+
+  MPI_Barrier(MPI_COMM_WORLD); /* getting time */
+  start = MPI_Wtime();
 
   original_file = fopen(argv[1], "r");
   check_file(original_file);
@@ -69,16 +74,11 @@ int main(int argc, char *argv[]){
     recv_counts[i] = num_pixels_per_proc; 
   } 
 
-  int set_counter = 0;
+  set_counter = 0;
   for(int i = (offset * rank)+1; i <= ((offset * rank) + offset); ++i) {
     grayscale_matrix[set_counter] = (rgb_matrix[i*3] + rgb_matrix[(i*3)+1] + rgb_matrix[(i*3)+2]) / 3;
     ++set_counter;
   }
-
-  int j = 0;
-  int i = 0;
-
-  printf("last iteration process %d: %d\n", rank, j);
 
   MPI_Gatherv(grayscale_matrix, num_pixels_per_proc, MPI_INT, 
     grayscale_matrix_recv, recv_counts, displs, MPI_INT, 0, MPI_COMM_WORLD);
@@ -132,8 +132,15 @@ int main(int argc, char *argv[]){
     free(rgb_matrix);
   }
   free(grayscale_matrix);
+  free(rgb_negative_matrix);
+
+  MPI_Barrier(MPI_COMM_WORLD); /* ending */
+  end = MPI_Wtime();
 
   MPI_Finalize();
+  if (rank == 0) {
+    printf("Runtime = %f\n", end-start);
+  }
   return 0;
 }
 
